@@ -1,0 +1,43 @@
+[Unit]
+Description=Raspberry Pi video kiosk
+# The kiosk owns tty1, so the login prompt on tty1 has to step aside.
+After=systemd-user-sessions.service getty@tty1.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+# install.sh replaces these two lines with the real user and groups.
+User=pi
+SupplementaryGroups=video render input audio tty
+ExecStart=/usr/local/bin/kiosk.sh
+
+# systemd creates /run/kiosk owned by the user above, and clears it away again
+# on stop. The service is not root, so it cannot make that directory itself.
+RuntimeDirectory=kiosk
+RuntimeDirectoryMode=0755
+
+# Restart if the player crashes or is killed, but stay down when someone quits
+# on purpose. Exit codes: 0 = normal quit, 4 = quit by signal, 130/143 = the
+# script itself was interrupted or terminated.
+Restart=on-failure
+RestartSec=2
+SuccessExitStatus=0 4 130 143
+
+# Give the player the screen and the keyboard of tty1.
+StandardInput=tty-force
+StandardOutput=journal
+StandardError=journal
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+KillMode=mixed
+TimeoutStopSec=5
+
+# When the kiosk stops, bring the login prompt back on tty1. The "+" runs this
+# as root: starting a unit is not something the kiosk user is allowed to do.
+# The "-" keeps a failure here from being reported as a failure of the service.
+ExecStopPost=+-/usr/bin/systemctl --no-block start getty@tty1.service
+
+[Install]
+WantedBy=multi-user.target

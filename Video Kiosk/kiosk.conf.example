@@ -1,0 +1,28 @@
+# Kiosk settings.
+#
+# install.sh copies this to /etc/kiosk/kiosk.conf on the Pi, and never
+# overwrites it afterwards. Edit the copy on the Pi, not this file, then:
+#   sudo systemctl restart video-kiosk
+
+# Video to play.
+VIDEO=/opt/kiosk/video.mkv
+
+# stream = ffmpeg feeds mpv one endless stream (seamless loop, recommended)
+# mpv    = mpv loops the file on its own (simpler, may show a small hiccup)
+LOOP_MODE=stream
+
+# Leave empty for the default output. List the options with:
+#   mpv --audio-device=help
+AUDIO_DEVICE=
+
+# Read-ahead buffer. Use 32MiB on a Pi 3 or any board with 1 GB of RAM.
+CACHE_BYTES=64MiB
+
+# How long a warning stays on screen before playback starts, in seconds. A
+# warning only appears if the video has a problem that would spoil the loop.
+WARNING_SECONDS=8
+
+# Extra mpv options, space separated. Useful ones:
+#   --hwdec=v4l2m2m-copy   force hardware decoding if auto-safe does not pick it
+#   --hwdec=no             software decoding, to rule hardware out when testing
+EXTRA_MPV_OPTS=

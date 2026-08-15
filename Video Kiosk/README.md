@@ -48,8 +48,11 @@ Note if you follow guides elsewhere: many describe a `B1`–`B4` list where `B2`
 still in the file) rather than the menu above, where `B2` means desktop. Setting `B2`
 from an old guide would boot you to the desktop and the video would not start.
 
-To change the video path, edit `VIDEO_FILE` at the top of `kiosk-video.sh` and run
-`./service.sh install` again.
+**The kiosk runs from this folder.** `kiosk-video.sh` is not copied anywhere, so editing
+it takes effect on the next `./service.sh start`. Keep the folder where it is: the
+service points at it, and moving or deleting it breaks the kiosk.
+
+To change the video path, edit `VIDEO_FILE` at the top of `kiosk-video.sh` and restart.
 
 Logs: `journalctl -u kiosk-video -b`
 
@@ -75,7 +78,7 @@ again. Leave no blank lines in that file — `thd` logs a parse error for each o
 
 | File | What |
 | --- | --- |
-| `kiosk-video.sh` | Runs ffmpeg and VLC. Installed to `/home/pi/kiosk-video.sh`. |
-| `kiosk-video.service` | systemd unit. Installed to `/etc/systemd/system/`. |
+| `kiosk-video.sh` | Runs ffmpeg and VLC. Runs from here, not copied. |
+| `kiosk-video.service` | Template for the unit. `install` writes it to `/etc/systemd/system/` with `ExecStart` pointing here. |
 | `kiosk-video.trigger` | Which key stops the video. Installed to `/etc/triggerhappy/triggers.d/`. |
 | `service.sh` | Install, uninstall, start, stop. |

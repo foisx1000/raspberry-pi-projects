@@ -1,0 +1,16 @@
+[Unit]
+Description=Kiosk Video Player
+After=network.target sound.target
+
+[Service]
+ExecStart=/home/pi/kiosk-video.sh
+ExecStop=/bin/sh -c "pkill -9 ffmpeg || true; pkill -9 vlc || true"
+#Restart=always
+Restart=on-failure
+RestartSec=3
+User=pi
+#Environment=DISPLAY=:0
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target

@@ -49,9 +49,27 @@ still in the file) rather than the menu above, where `B2` means desktop. Setting
 from an old guide would boot you to the desktop and the video would not start.
 
 To change the video path, edit `VIDEO_FILE` at the top of `kiosk-video.sh` and run
-`sudo ./service.sh install` again.
+`./service.sh install` again.
 
 Logs: `journalctl -u kiosk-video -b`
+
+## Stopping it from the Pi itself
+
+**Press ESC, Q or Ctrl+C on the keyboard plugged into the Pi.** The video stops and you
+get the login prompt. Start it again with `./service.sh start`, or just reboot.
+
+This works through `triggerhappy`, a small daemon that watches the keyboard devices
+directly rather than going through the screen or a terminal — which is why it works when
+pressing keys at the video does nothing. `install` sets it up.
+
+Because it reads the keyboard directly, it does not matter what is on screen: while the
+video is playing, typing `q` or `Ctrl+C` at a console stops it as well. Once stopped the
+keys do nothing, so this only bites if you restart the kiosk and then keep typing on the
+Pi's own keyboard.
+
+Keys are listed in `kiosk-video.trigger`, one per line. Delete any you do not want, add
+others using the kernel's names (`KEY_F12`, `KEY_SPACE`), then run `./service.sh install`
+again. Leave no blank lines in that file — `thd` logs a parse error for each one.
 
 ## Files
 
@@ -59,4 +77,5 @@ Logs: `journalctl -u kiosk-video -b`
 | --- | --- |
 | `kiosk-video.sh` | Runs ffmpeg and VLC. Installed to `/home/pi/kiosk-video.sh`. |
 | `kiosk-video.service` | systemd unit. Installed to `/etc/systemd/system/`. |
+| `kiosk-video.trigger` | Which key stops the video. Installed to `/etc/triggerhappy/triggers.d/`. |
 | `service.sh` | Install, uninstall, start, stop. |

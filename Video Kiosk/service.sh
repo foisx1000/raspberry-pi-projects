@@ -12,6 +12,7 @@ NAME=kiosk-video
 HERE=$(cd "$(dirname "$0")" && pwd)
 SCRIPT=/home/pi/kiosk-video.sh
 UNIT=/etc/systemd/system/$NAME.service
+TRIGGER=/etc/triggerhappy/triggers.d/$NAME.conf
 
 # Check the command before asking for a password, so a typo does not make you
 # authenticate first only to be told it was wrong.
@@ -39,9 +40,29 @@ case "$1" in
 		done
 		install -m 755 "$HERE/kiosk-video.sh" "$SCRIPT"
 		install -m 644 "$HERE/kiosk-video.service" "$UNIT"
+
+		# ESC on the Pi's own keyboard stops the video. triggerhappy watches
+		# /dev/input directly, so it works no matter who owns the screen.
+		# Its unit hardcodes --user nobody, which cannot stop a service, hence
+		# the override.
+		if ! command -v thd >/dev/null; then
+			apt-get install -y triggerhappy
+		fi
+		mkdir -p /etc/triggerhappy/triggers.d
+		install -m 644 "$HERE/kiosk-video.trigger" "$TRIGGER"
+		mkdir -p /etc/systemd/system/triggerhappy.service.d
+		cat > /etc/systemd/system/triggerhappy.service.d/run-as-root.conf <<-'EOF'
+			[Service]
+			ExecStart=
+			ExecStart=/usr/sbin/thd --triggers /etc/triggerhappy/triggers.d/ --socket /run/thd.socket --user root --deviceglob /dev/input/event*
+		EOF
+
 		systemctl daemon-reload
 		systemctl enable "$NAME"
+		systemctl enable triggerhappy
+		systemctl restart triggerhappy
 		echo "Installed. Start it with: ./service.sh start"
+		echo "Press ESC on the Pi's keyboard to stop the video."
 
 		# The video needs the console. Booting to the desktop leaves the
 		# compositor owning the screen, and this service has no desktop session
@@ -67,8 +88,10 @@ case "$1" in
 	uninstall)
 		systemctl stop "$NAME" 2>/dev/null || true
 		systemctl disable "$NAME" 2>/dev/null || true
-		rm -f "$UNIT" "$SCRIPT"
+		rm -f "$UNIT" "$SCRIPT" "$TRIGGER"
+		rm -f /etc/systemd/system/triggerhappy.service.d/run-as-root.conf
 		systemctl daemon-reload
+		systemctl restart triggerhappy 2>/dev/null || true
 		echo "Uninstalled."
 		;;
 	start)
